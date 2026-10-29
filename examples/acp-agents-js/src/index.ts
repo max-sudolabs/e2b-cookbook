@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { Sandbox } from 'e2b'
-import { connectAcpAgent } from '@e2b/acp'
-import { PROTOCOL_VERSION, type Client } from '@agentclientprotocol/sdk'
+import { AcpAgent } from '@e2b/acp'
+import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 
 // Each agent is a sandbox template plus the command that starts it in ACP mode.
 const agents = {
@@ -37,20 +37,19 @@ if (!agentConfig) {
 
 // The ACP client: it shows the agent's progress and answers permission requests.
 // File edits and shell commands happen inside the sandbox, not on this machine.
-const client: Client = {
-  async requestPermission({ toolCall, options }) {
+const app = client({ name: 'e2b-acp-cookbook' })
+  .onRequest(methods.client.session.requestPermission, async ({ params: { toolCall, options } }) => {
     const allow = options.find((o) => o.kind === 'allow_once') ?? options[0]
     console.log(`\n[permission] ${toolCall.title} -> ${allow.name}`)
     return { outcome: { outcome: 'selected', optionId: allow.optionId } }
-  },
-  async sessionUpdate({ update }) {
+  })
+  .onNotification(methods.client.session.update, ({ params: { update } }) => {
     if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
       process.stdout.write(update.content.text)
     } else if (update.sessionUpdate === 'tool_call') {
       console.log(`\n[tool] ${update.title}`)
     }
-  },
-}
+  })
 
 const sandbox = await Sandbox.create(agentConfig.template, { timeoutMs: 10 * 60_000 })
 console.log(`Sandbox ${sandbox.sandboxId} with ${name}`)
@@ -60,20 +59,20 @@ try {
   await sandbox.files.makeDir(cwd)
 
   // Start the agent inside the sandbox and connect an ACP client to it.
-  const agent = await connectAcpAgent(sandbox, agentConfig.command, client, {
+  const agent = await AcpAgent.start(sandbox, agentConfig.command, app, {
     cwd,
     envs: agentConfig.envs,
   })
-  const connection = agent.connection
+  // Requests to the agent go through agent.connection.agent.
+  const acp = agent.connection.agent
 
-  const { agentInfo } = await connection.initialize({
+  const { agentInfo } = await acp.request(methods.agent.initialize, {
     protocolVersion: PROTOCOL_VERSION,
-    clientCapabilities: {},
   })
   console.log(`Connected to ${agentInfo?.name} ${agentInfo?.version}`)
 
-  const { sessionId } = await connection.newSession({ cwd, mcpServers: [] })
-  const { stopReason } = await connection.prompt({
+  const { sessionId } = await acp.request(methods.agent.session.new, { cwd, mcpServers: [] })
+  const { stopReason } = await acp.request(methods.agent.session.prompt, {
     sessionId,
     prompt: [
       {
