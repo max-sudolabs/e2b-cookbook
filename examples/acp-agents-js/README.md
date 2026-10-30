@@ -12,10 +12,10 @@ The same client works for all three agents: only the sandbox template and the co
 
 ## How it works
 
-The example creates a sandbox from the agent's template, then `AcpAgent.start()` from [`@e2b/acp`](https://www.npmjs.com/package/@e2b/acp) starts the agent inside it and connects your ACP client, built with `client()` from `@agentclientprotocol/sdk`, over the agent's stdin and stdout:
+The example creates a sandbox from the agent's template, then `ACPAgent.start()` from [`@e2b/acp`](https://www.npmjs.com/package/@e2b/acp) starts the agent inside it and connects your ACP client, built with `client()` from `@agentclientprotocol/sdk`, over the agent's stdin and stdout:
 
 ```ts
-const agent = await AcpAgent.start(sandbox, 'opencode acp', app, { cwd, envs })
+const agent = await ACPAgent.start(sandbox, 'opencode acp', app, { cwd, envs })
 
 const acp = agent.connection.agent
 await acp.request(methods.agent.initialize, { protocolVersion: PROTOCOL_VERSION })
@@ -25,7 +25,7 @@ await acp.request(methods.agent.session.prompt, { sessionId, prompt: [{ type: 't
 await agent.stop()
 ```
 
-`AcpAgent.start()` turns off the client filesystem and terminal capabilities in `initialize` and rejects agent requests for them, so the agent edits files and runs commands with its own tools inside the sandbox, never on the machine running your client. It does not restrict the agent's network access or the MCP servers you pass to it.
+`ACPAgent.start()` turns off the client filesystem and terminal capabilities in `initialize` and rejects agent requests for them, so the agent edits files and runs commands with its own tools inside the sandbox, never on the machine running your client. It does not restrict the agent's network access or the MCP servers you pass to it.
 
 Your client still answers permission requests and receives the agent's messages and tool calls. This example approves each request with its `allow_once` option and prints the agent's progress.
 

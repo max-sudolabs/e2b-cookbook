@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Sandbox } from 'e2b'
-import { AcpAgent } from '@e2b/acp'
+import { ACPAgent } from '@e2b/acp'
 import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 
 // Each agent is a sandbox template plus the command that starts it in ACP mode.
@@ -59,7 +59,7 @@ try {
   await sandbox.files.makeDir(cwd)
 
   // Start the agent inside the sandbox and connect an ACP client to it.
-  const agent = await AcpAgent.start(sandbox, agentConfig.command, app, {
+  const agent = await ACPAgent.start(sandbox, agentConfig.command, app, {
     cwd,
     envs: agentConfig.envs,
   })

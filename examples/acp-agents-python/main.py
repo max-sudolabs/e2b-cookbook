@@ -7,7 +7,7 @@ from acp import schema
 from dotenv import load_dotenv
 
 from e2b import AsyncSandbox
-from e2b_acp import AcpAgent
+from e2b_acp import AsyncACPAgent
 
 load_dotenv()
 
@@ -74,7 +74,7 @@ async def main():
         await sandbox.files.make_dir(cwd)
 
         # Start the agent inside the sandbox and connect an ACP client to it.
-        agent = await AcpAgent.start(
+        agent = await AsyncACPAgent.start(
             sandbox, config["command"], Client(), cwd=cwd, envs=config["envs"]
         )
         connection = agent.connection
